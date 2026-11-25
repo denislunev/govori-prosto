@@ -69,8 +69,8 @@ textarea{width:100%;min-height:160px;border-radius:12px;border:2px solid var(--l
 .bl .n{font-size:28px;font-weight:900;width:44px;flex:none;color:var(--acc);text-align:center}
 .bl .t{flex:1}.bl .t span{display:block}.bl .t b{display:block;font-size:18px}.bl .bar{margin:6px 0 0}
 .round{font-weight:900;font-size:15px;color:var(--mute);margin:22px 0 10px}
-.story{padding-left:26px;margin:16px 0}.sl{padding:10px 8px;border-radius:12px;cursor:pointer;margin:2px 0}
-.sl.cur{background:var(--card);outline:2px solid var(--acc)}.se{display:block;font-size:19px;font-weight:700;line-height:1.35}.se mark{background:none;color:var(--acc)}
+.story{margin:14px 0}.story p{font-size:20px;line-height:1.65;margin:0 0 14px;font-weight:600}.sl{cursor:pointer;border-radius:6px;padding:1px 2px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.sl.cur{background:var(--card);box-shadow:0 0 0 2px var(--acc)}.sl mark{background:none;color:var(--acc)}.se{display:block;font-size:19px;font-weight:700;line-height:1.35}.se mark{background:none;color:var(--acc)}
 .sr{display:block;font-size:15px;color:var(--mute)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.chip{padding:4px 10px;border-radius:20px;background:var(--card);border:2px solid var(--line);font-weight:700;font-size:15px}
 .chip.hit{border-color:var(--ok);color:var(--ok)}.chip.gone{opacity:.45}
@@ -159,28 +159,31 @@ function wordHit(word,toks){const parts=word.toLowerCase().split(/[ -]/).filter(
  return ps.every(p=>{const irr=MATCH.irr[p]||[];if(p.length<=4){const f=new Set([p,p+'s',p+'es',p+'d',p+'ed',p+'ing',p+p.slice(-1)+'ed',p+p.slice(-1)+'ing',p.slice(0,-1)+'ied',p.slice(0,-1)+'ies',p.slice(0,-1)+'ing',...irr]);return toks.some(t=>f.has(t))}const st=p.replace(/(e|y)$/,'');return toks.some(t=>t.startsWith(st)||irr.includes(t))})}
 const toksOf=s=>s.toLowerCase().replace(/[’`]/g,"'").match(/[a-z0-9']+/g)||[];
 let play={id:0,i:-1};
-function stopPlay(){play.id++;play.i=-1;try{speechSynthesis.cancel()}catch(e){}markLine(-1);const b=$('#pl');if(b)b.textContent='Слушать всё'}
-function markLine(i){app.querySelectorAll('.sl').forEach((e,k)=>e.classList.toggle('cur',k===i));const e=app.querySelector(`.sl[data-i="${i}"]`);if(e)e.scrollIntoView({block:'center',behavior:'smooth'})}
-function playFrom(lines,i,slow){const id=++play.id;
- const step=k=>{if(id!==play.id)return;if(k>=lines.length){stopPlay();return}play.i=k;markLine(k);
+function stopPlay(){play.id++;play.i=-1;try{speechSynthesis.cancel()}catch(e){}markLine(-1)}
+function markLine(i){app.querySelectorAll('.sl').forEach((e,k)=>e.classList.toggle('cur',k===i));const e=app.querySelector(`.sl[data-i="${i}"]`);if(e){const r=e.getBoundingClientRect();if(r.top<80||r.bottom>innerHeight-40)e.scrollIntoView({block:'center',behavior:'smooth'})}}
+function playFrom(lines,i,slow,onDone){const id=++play.id;
+ const step=k=>{if(id!==play.id)return;if(k>=lines.length){play.i=-1;markLine(-1);if(onDone)onDone();return}play.i=k;markLine(k);
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(lines[k][1]);u.lang='en-US';if(voice)u.voice=voice;u.rate=slow?0.6:S.rate;
-   let done=false;const nx=()=>{if(done)return;done=true;setTimeout(()=>step(k+1),slow?700:350)};u.onend=nx;u.onerror=nx;speechSynthesis.speak(u);
+   let done=false;const nx=()=>{if(done)return;done=true;setTimeout(()=>step(k+1),slow?220:60)};u.onend=nx;u.onerror=nx;speechSynthesis.speak(u);
    setTimeout(()=>{if(!done&&id===play.id&&!speechSynthesis.speaking)nx()},(slow?9000:6000))}catch(e){stopPlay()}};
  step(i)}
 function story(){const bi=V.bi,s=ST[bi];if(!S.rt)S.rt={};
+ const paras=[];for(let i=0;i<s.lines.length;i+=5)paras.push(s.lines.slice(i,i+5).map((l,k)=>`<span class="sl" data-i="${i+k}">${hl(l[1],l[0])}</span>`).join(' '));
  app.innerHTML=`<div class="top"><div class="wrap"><button class="back" id="home">← Назад</button><div class="cnt">${esc(T(bi))} · Рассказ</div>
- <h1 style="font-size:clamp(28px,6vw,38px)">${esc(s.title)}</h1><p class="mute">${esc(s.titleRu)}</p>
- <div class="row sticky"><button class="btn pri" id="pl">Слушать всё</button><button class="btn" id="sl">Медленно</button><button class="btn ghost" id="stp">Стоп</button></div>
- <label class="chk"><input type="checkbox" id="tr" ${S.storyRu!==false?'checked':''}> Показывать перевод</label>
- <ol class="story">${s.lines.map((l,i)=>`<li class="sl" data-i="${i}"><span class="se">${hl(l[1],l[0])}</span>${S.storyRu!==false?`<span class="sr">${esc(l[2])}</span>`:''}</li>`).join('')}</ol>
- <p class="small mute">Нажми на предложение — прозвучит только оно. Слушай рассказ несколько дней подряд, потом перескажи своими словами.</p>
+ <h1 style="font-size:clamp(28px,6vw,38px)">${esc(s.title)}</h1>
+ <div class="row sticky"><button class="btn pri" id="sh">Шэдоуинг</button><button class="btn" id="sl">Медленно</button><button class="btn" id="nm">Нормально</button><button class="btn ghost" id="stp">Стоп</button></div>
+ <p class="small mute" id="st">Шэдоуинг: сначала медленно, потом сразу в обычном темпе. Говори вслух вместе с диктором, чуть позади него.</p>
+ <div class="story">${paras.map(p=>`<p>${p}</p>`).join('')}</div>
+ <p class="small mute">Нажми на предложение — прозвучит только оно.</p>
  <div class="row"><button class="btn pri" id="rt">Перескажи${S.rt[bi]!=null?` · лучший: ${S.rt[bi]}/25`:''}</button></div></div></div>`;
+ const stEl=$('#st'),lines=s.lines;
+ const run=(slow,then)=>{stopPlay();stEl.textContent=slow?'Сейчас: медленно':'Сейчас: обычная скорость';playFrom(lines,0,slow,then||(()=>{stEl.textContent='Готово. Повтори ещё раз или перескажи.'}))};
  $('#home').onclick=()=>{stopPlay();go({v:'block',bi})};
- $('#pl').onclick=()=>{if(play.i>=0){stopPlay();return}$('#pl').textContent='Пауза';playFrom(s.lines,0,false)};
- $('#sl').onclick=()=>{stopPlay();$('#pl').textContent='Пауза';playFrom(s.lines,0,true)};
- $('#stp').onclick=stopPlay;
- $('#tr').onchange=e=>{S.storyRu=e.target.checked;save();stopPlay();render()};
- app.querySelectorAll('.sl').forEach(li=>li.onclick=()=>{stopPlay();const i=+li.dataset.i;markLine(i);speak(s.lines[i][1])});
+ $('#sh').onclick=()=>run(true,()=>{setTimeout(()=>run(false),1200)});
+ $('#sl').onclick=()=>run(true);
+ $('#nm').onclick=()=>run(false);
+ $('#stp').onclick=()=>{stopPlay();stEl.textContent='Остановлено.'};
+ app.querySelectorAll('.sl').forEach(el=>el.onclick=()=>{stopPlay();const i=+el.dataset.i;markLine(i);speak(lines[i][1])});
  $('#rt').onclick=()=>{stopPlay();go({v:'retell',bi,hints:true,text:'',res:null})};
 }
 let rtRec=null,rtOn=false;
