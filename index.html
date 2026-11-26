@@ -159,7 +159,7 @@ function wordHit(word,toks){const parts=word.toLowerCase().split(/[ -]/).filter(
  return ps.every(p=>{const irr=MATCH.irr[p]||[];if(p.length<=4){const f=new Set([p,p+'s',p+'es',p+'d',p+'ed',p+'ing',p+p.slice(-1)+'ed',p+p.slice(-1)+'ing',p.slice(0,-1)+'ied',p.slice(0,-1)+'ies',p.slice(0,-1)+'ing',...irr]);return toks.some(t=>f.has(t))}const st=p.replace(/(e|y)$/,'');return toks.some(t=>t.startsWith(st)||irr.includes(t))})}
 const toksOf=s=>s.toLowerCase().replace(/[’`]/g,"'").match(/[a-z0-9']+/g)||[];
 let play={id:0,i:-1};
-function stopPlay(){play.id++;play.i=-1;try{speechSynthesis.cancel()}catch(e){}markLine(-1)}
+function stopPlay(){play.id++;play.i=-1;try{speechSynthesis.cancel()}catch(e){}try{aud.pause()}catch(e){}markLine(-1)}
 function markLine(i){app.querySelectorAll('.sl').forEach((e,k)=>e.classList.toggle('cur',k===i));const e=app.querySelector(`.sl[data-i="${i}"]`);if(e){const r=e.getBoundingClientRect();if(r.top<80||r.bottom>innerHeight-40)e.scrollIntoView({block:'center',behavior:'smooth'})}}
 function playFrom(lines,i,slow,onDone){const id=++play.id;
  const step=k=>{if(id!==play.id)return;if(k>=lines.length){play.i=-1;markLine(-1);if(onDone)onDone();return}play.i=k;markLine(k);
@@ -167,23 +167,32 @@ function playFrom(lines,i,slow,onDone){const id=++play.id;
    let done=false;const nx=()=>{if(done)return;done=true;setTimeout(()=>step(k+1),slow?220:60)};u.onend=nx;u.onerror=nx;speechSynthesis.speak(u);
    setTimeout(()=>{if(!done&&id===play.id&&!speechSynthesis.speaking)nx()},(slow?9000:6000))}catch(e){stopPlay()}};
  step(i)}
+let MAN=null,manTried=false;const aud=new Audio();aud.preload='auto';
+async function loadMan(){if(manTried)return MAN;manTried=true;try{const r=await fetch('audio/stories/manifest.json',{cache:'no-cache'});if(r.ok)MAN=await r.json()}catch(e){}return MAN}
+const aUrl=(id,i)=>`audio/stories/${id}/${String(i).padStart(2,'0')}.mp3`;
+function playAudio(id,lines,i,onDone,single){const my=++play.id;const gap=Math.round(((MAN&&MAN.pause)||0.5)*1000);
+ const step=k=>{if(my!==play.id)return;if(k>=lines.length||(single&&k>i)){play.i=-1;markLine(-1);if(onDone)onDone();return}
+  play.i=k;markLine(k);aud.onended=()=>{if(my!==play.id)return;setTimeout(()=>step(k+1),single?0:gap)};
+  aud.onerror=()=>{if(my!==play.id)return;play.id++;toast('Аудио не загрузилось — играю голосом телефона');playFrom(lines,k,true,onDone)};
+  aud.src=aUrl(id,k);aud.play().catch(()=>{});if(!single&&k+1<lines.length){const n=new Audio();n.preload='auto';n.src=aUrl(id,k+1)}};
+ step(i)}
 function story(){const bi=V.bi,s=ST[bi];if(!S.rt)S.rt={};
  const paras=[];for(let i=0;i<s.lines.length;i+=5)paras.push(s.lines.slice(i,i+5).map((l,k)=>`<span class="sl" data-i="${i+k}">${hl(l[1],l[0])}</span>`).join(' '));
  app.innerHTML=`<div class="top"><div class="wrap"><button class="back" id="home">← Назад</button><div class="cnt">${esc(T(bi))} · Рассказ</div>
  <h1 style="font-size:clamp(28px,6vw,38px)">${esc(s.title)}</h1>
- <div class="row sticky"><button class="btn pri" id="sh">Шэдоуинг</button><button class="btn" id="sl">Медленно</button><button class="btn" id="nm">Нормально</button><button class="btn ghost" id="stp">Стоп</button></div>
- <p class="small mute" id="st">Шэдоуинг: сначала медленно, потом сразу в обычном темпе. Говори вслух вместе с диктором, чуть позади него.</p>
+ <div class="row sticky"><button class="btn pri" id="go">Слушать и повторять</button><button class="btn ghost" id="stp">Стоп</button></div>
+ <p class="small mute" id="st">Говори вслух вместе с диктором, чуть позади него. Спокойный темп — около 92 слов в минуту.</p>
  <div class="story">${paras.map(p=>`<p>${p}</p>`).join('')}</div>
  <p class="small mute">Нажми на предложение — прозвучит только оно.</p>
  <div class="row"><button class="btn pri" id="rt">Перескажи${S.rt[bi]!=null?` · лучший: ${S.rt[bi]}/25`:''}</button></div></div></div>`;
- const stEl=$('#st'),lines=s.lines;
- const run=(slow,then)=>{stopPlay();stEl.textContent=slow?'Сейчас: медленно':'Сейчас: обычная скорость';playFrom(lines,0,slow,then||(()=>{stEl.textContent='Готово. Повтори ещё раз или перескажи.'}))};
+ const stEl=$('#st'),lines=s.lines,has=()=>MAN&&MAN.stories&&MAN.stories[s.id];
+ const done=()=>{stEl.textContent='Готово. Повтори ещё раз или перескажи.'};
+ const start=(i,single)=>{stopPlay();if(has())playAudio(s.id,lines,i,single?null:done,single);else if(single)speak(lines[i][1]);else{stEl.textContent='Голос телефона (аудио рассказа ещё не загружено).';playFrom(lines,i,true,done)}};
+ loadMan();
  $('#home').onclick=()=>{stopPlay();go({v:'block',bi})};
- $('#sh').onclick=()=>run(true,()=>{setTimeout(()=>run(false),1200)});
- $('#sl').onclick=()=>run(true);
- $('#nm').onclick=()=>run(false);
+ $('#go').onclick=async()=>{await loadMan();stEl.textContent='Слушай и повторяй…';start(0,false)};
  $('#stp').onclick=()=>{stopPlay();stEl.textContent='Остановлено.'};
- app.querySelectorAll('.sl').forEach(el=>el.onclick=()=>{stopPlay();const i=+el.dataset.i;markLine(i);speak(lines[i][1])});
+ app.querySelectorAll('.sl').forEach(el=>el.onclick=async()=>{await loadMan();start(+el.dataset.i,true)});
  $('#rt').onclick=()=>{stopPlay();go({v:'retell',bi,hints:true,text:'',res:null})};
 }
 let rtRec=null,rtOn=false;
