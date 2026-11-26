@@ -1,0 +1,143 @@
+name: Story audio (Kokoro TTS)
+
+# Озвучка рассказов нейроголосом Kokoro (Apache-2.0).
+# Запуск вручную: вкладка Actions -> "Story audio (Kokoro TTS)" -> Run workflow.
+#   mode=sample  — проба: рассказ 1 тремя голосами, файлы в audio/sample/
+#   mode=full    — все 20 рассказов выбранным голосом, файлы в audio/stories/
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "sample или full"
+        required: true
+        default: "sample"
+        type: choice
+        options: [sample, full]
+      voice:
+        description: "Голос для full (например af_heart, af_bella, am_michael)"
+        required: false
+        default: "af_heart"
+      wpm:
+        description: "Целевой темп, слов в минуту (с паузами между предложениями)"
+        required: false
+        default: "97"
+      pause:
+        description: "Пауза между предложениями, секунд"
+        required: false
+        default: "0.6"
+
+permissions:
+  contents: write
+
+jobs:
+  tts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          pip install kokoro-onnx soundfile numpy
+          which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+          mkdir -p /tmp/kokoro && cd /tmp/kokoro
+          curl -sSL -o kokoro-v1.0.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+          curl -sSL -o voices-v1.0.bin https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+          ls -la
+
+      - name: Generate
+        env:
+          MODE: ${{ inputs.mode }}
+          VOICE: ${{ inputs.voice }}
+          WPM: ${{ inputs.wpm }}
+          PAUSE: ${{ inputs.pause }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess, tempfile
+          import numpy as np, soundfile as sf
+          from kokoro_onnx import Kokoro
+
+          MODE = os.environ["MODE"]; VOICE = os.environ.get("VOICE") or "af_heart"
+          WPM = float(os.environ.get("WPM") or 97); PAUSE = float(os.environ.get("PAUSE") or 0.6)
+
+          html = open("index.html", encoding="utf8").read()
+          ST = json.loads(re.search(r"const ST=(\[.*?\]);\s*const SIMPLE", html, re.S).group(1))
+          tts = Kokoro("/tmp/kokoro/kokoro-v1.0.onnx", "/tmp/kokoro/voices-v1.0.bin")
+          words = lambda t: len(re.findall(r"[A-Za-z0-9']+", t))
+
+          def synth(text, voice, speed):
+              a, sr = tts.create(text, voice=voice, speed=speed, lang="en-us")
+              return a.astype(np.float32), sr
+
+          def story_at(lines, voice, speed):
+              out = [synth(l[1], voice, speed) for l in lines]
+              return out
+
+          def total_secs(clips):
+              return sum(len(a) / sr for a, sr in clips) + PAUSE * (len(clips) - 1)
+
+          def calibrate(lines, voice):
+              """Подбираем скорость модели, чтобы весь рассказ шёл ровно WPM слов в минуту."""
+              n = sum(words(l[1]) for l in lines)
+              target = n / WPM * 60.0
+              speed = 0.75
+              clips = story_at(lines, voice, speed)
+              for _ in range(4):
+                  t = total_secs(clips)
+                  speech = t - PAUSE * (len(clips) - 1)
+                  want = target - PAUSE * (len(clips) - 1)
+                  new = max(0.5, min(2.0, speed * speech / want))
+                  if abs(t - target) / target < 0.015 or abs(new - speed) < 0.005:
+                      break
+                  speed = new
+                  clips = story_at(lines, voice, speed)
+              t = total_secs(clips)
+              return speed, clips, n / t * 60.0
+
+          def mp3(path, audio, sr):
+              os.makedirs(os.path.dirname(path), exist_ok=True)
+              with tempfile.NamedTemporaryFile(suffix=".wav") as w:
+                  sf.write(w.name, audio, sr)
+                  subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", w.name,
+                                  "-ac", "1", "-codec:a", "libmp3lame", "-b:a", "56k", path], check=True)
+
+          if MODE == "sample":
+              report = {"wpm_target": WPM, "pause": PAUSE, "voices": {}}
+              lines = ST[0]["lines"]
+              for v in ["af_heart", "af_bella", "am_michael"]:
+                  speed, clips, wpm = calibrate(lines, v)
+                  sr = clips[0][1]; gap = np.zeros(int(sr * PAUSE), np.float32)
+                  parts = []
+                  for i, (a, _) in enumerate(clips):
+                      parts.append(a)
+                      if i < len(clips) - 1: parts.append(gap)
+                  mp3(f"audio/sample/{v}.mp3", np.concatenate(parts), sr)
+                  report["voices"][v] = {"speed": round(speed, 3), "wpm": round(wpm, 1)}
+                  print(v, report["voices"][v], flush=True)
+              json.dump(report, open("audio/sample/report.json", "w"), indent=1)
+          else:
+              man = {"voice": VOICE, "wpm_target": WPM, "pause": PAUSE, "stories": {}}
+              for s in ST:
+                  speed, clips, wpm = calibrate(s["lines"], VOICE)
+                  durs = []
+                  for i, (a, sr) in enumerate(clips):
+                      mp3(f"audio/stories/{s['id']}/{i:02d}.mp3", a, sr)
+                      durs.append(round(len(a) / sr, 3))
+                  man["stories"][s["id"]] = {"speed": round(speed, 3), "wpm": round(wpm, 1), "durations": durs}
+                  print(s["id"], round(speed, 3), round(wpm, 1), flush=True)
+              json.dump(man, open("audio/stories/manifest.json", "w"), indent=1)
+          PY
+
+      - name: Commit audio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audio
+          git commit -m "Story audio: ${{ inputs.mode }} (${{ inputs.voice }}, ${{ inputs.wpm }} wpm)" || echo "nothing to commit"
+          git pull --rebase
+          git push
