@@ -119,7 +119,17 @@ function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';cl
 let voice=null;
 function pickVoice(){const v=(window.speechSynthesis&&speechSynthesis.getVoices())||[];const en=v.filter(x=>/^en[-_]US/i.test(x.lang));voice=en.find(x=>/natural|google|samantha|aria|jenny/i.test(x.name))||en[0]||v.find(x=>/^en/i.test(x.lang))||null}
 if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
-function speak(t,slow){if(!window.speechSynthesis){toast('Озвучка не поддерживается');return}try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-US';if(voice)u.voice=voice;u.rate=slow?0.6:S.rate;speechSynthesis.speak(u)}catch(e){}}
+function speak(t,slow){if(!window.speechSynthesis){toast('Озвучка не поддерживается');return}
+ const ss=speechSynthesis;try{if(typeof aud!=='undefined')aud.pause()}catch(e){}
+ const sid=++speak.id;
+ const attempt=(useVoice,tries)=>{let started=false;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';if(useVoice&&voice)u.voice=voice;u.rate=slow?0.6:S.rate;
+  u.onstart=()=>{started=true};
+  u.onerror=e=>{if(sid!==speak.id||e.error==='interrupted'||e.error==='canceled')return;if(tries<1)attempt(false,tries+1);else toast('Голос телефона не отвечает ('+e.error+')')};
+  try{ss.speak(u)}catch(e){}
+  setTimeout(()=>{if(sid!==speak.id||started||ss.speaking)return;if(tries<1){try{ss.cancel();ss.resume()}catch(e){}attempt(false,tries+1)}else toast('Голос телефона не отвечает. Проверь громкость и «Синтез речи» в настройках телефона.')},1600)};
+ try{if(ss.speaking||ss.pending)ss.cancel();if(ss.paused)ss.resume()}catch(e){}
+ attempt(true,0)}
+speak.id=0;
 
 /* ---------- speech in ---------- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
