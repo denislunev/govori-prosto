@@ -89,6 +89,7 @@ label.chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:70
 .tile{padding:8px 12px;border-radius:12px;border:2px solid var(--line);background:var(--card);font-weight:800;font-size:17px;cursor:pointer;margin:3px}.tile.on{border-color:var(--acc)}
 .built{min-height:48px;display:flex;flex-wrap:wrap;align-items:center;border-bottom:2px dashed var(--line);padding-bottom:6px}
 mark{background:none;color:var(--acc);font-weight:800}
+.pr{font-size:.6em;font-weight:700;color:var(--mute);white-space:nowrap}
 .typo{color:#b88a00;font-weight:800;text-decoration:underline dotted}
 .tbar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:8px 0}.tbar i{display:block;height:100%;width:100%;background:var(--acc)}
 </style>
@@ -361,11 +362,11 @@ function lstep(){if(!needLD())return;if(cStat(V.id)==='lock'){go({v:'ladder'});r
 function stWords(){const L=lsn(V.id),nw=L.words.filter(w=>!w.known),kn=L.words.filter(w=>w.known);const i=V.i,w=nw[i],ex=L.phrases[w.ex];
  const x={lid:V.id,wa:w.a,h:w.h,w:w.w};LS().wd[V.id+'/'+w.a]=1;
  app.innerHTML=`<div class="top"><div class="wrap">${navTop('')}${strip(V.id,0)}
- ${i===0&&kn.length?`<p class="small mute" style="margin-top:8px">Знакомые слова урока: ${kn.map(k=>`<span class="chip gone">${esc(k.w)} — ${esc(k.ru)}</span>`).join(' ')}</p>`:''}
- <div class="card"><div class="cnt">Новое слово ${i+1} из ${nw.length}</div><div class="en">${esc(w.w)}</div><div class="ru">${esc(w.ru)}</div>
+ ${i===0&&kn.length?`<p class="small mute" style="margin-top:8px">Знакомые слова урока: ${kn.map(k=>`<span class="chip gone">${esc(k.w)} (${esc(k.pr)}) — ${esc(k.ru)}</span>`).join(' ')}</p>`:''}
+ <div class="card"><div class="cnt">Новое слово ${i+1} из ${nw.length}</div><div class="en">${esc(w.w)} <span class="pr">(${esc(w.pr)})</span></div><div class="ru">${esc(w.ru)}</div>
  <p style="margin-top:14px">${hlL(ex.en,[w.w])}<br><span class="mute small">${esc(ex.ru)}</span></p>
  <div class="row"><button class="btn" id="play">Слушать</button>${micBtn()}</div><div id="res"></div></div>
- <p class="small mute" style="margin-top:12px">Послушай и скажи слово вслух 2–3 раза.</p>
+ <p class="small mute" style="margin-top:12px">Послушай и скажи слово вслух 2–3 раза. В скобках — как произносить; БОЛЬШИЕ буквы — ударный слог.</p>
  <div class="row"><button class="btn pri" id="next">${i+1<nw.length?'Дальше':'К формуле →'}</button></div></div></div>`;
  sayL(x);
  $('#home').onclick=()=>go({v:'lesson',id:V.id});
