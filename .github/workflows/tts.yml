@@ -1,9 +1,11 @@
-name: Story audio (Kokoro TTS)
+name: Audio (Kokoro TTS)
 
 # Озвучка рассказов нейроголосом Kokoro (Apache-2.0).
 # Запуск вручную: вкладка Actions -> "Story audio (Kokoro TTS)" -> Run workflow.
 #   mode=sample  — проба: рассказ 1 тремя голосами, файлы в audio/sample/
 #   mode=full    — все 20 рассказов выбранным голосом, файлы в audio/stories/
+#   mode=ladder  — слова и фразы «Лестницы» из ladder.json, файлы в audio/ladder/
+#                  (только новые и изменённые — сравнение по хешу текста)
 
 on:
   workflow_dispatch:
@@ -11,13 +13,13 @@ on:
       mode:
         description: "sample или full"
         required: true
-        default: "sample"
+        default: "ladder"
         type: choice
-        options: [sample, full]
+        options: [ladder, full, sample]
       voice:
         description: "Голос для full (например af_heart, af_bella, am_michael)"
         required: false
-        default: "af_heart"
+        default: "am_michael"
       wpm:
         description: "Целевой темп, слов в минуту (с паузами между предложениями)"
         required: false
@@ -65,8 +67,9 @@ jobs:
           MODE = os.environ["MODE"]; VOICE = os.environ.get("VOICE") or "af_heart"
           WPM = float(os.environ.get("WPM") or 97); PAUSE = float(os.environ.get("PAUSE") or 0.6)
 
-          html = open("index.html", encoding="utf8").read()
-          ST = json.loads(re.search(r"const ST=(\[.*?\]);\s*const SIMPLE", html, re.S).group(1))
+          if MODE != "ladder":
+              html = open("index.html", encoding="utf8").read()
+              ST = json.loads(re.search(r"const ST=(\[.*?\]);\s*const SIMPLE", html, re.S).group(1))
           tts = Kokoro("/tmp/kokoro/kokoro-v1.0.onnx", "/tmp/kokoro/voices-v1.0.bin")
           words = lambda t: len(re.findall(r"[A-Za-z0-9']+", t))
 
@@ -106,7 +109,30 @@ jobs:
                   subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", w.name,
                                   "-ac", "1", "-codec:a", "libmp3lame", "-b:a", "56k", path], check=True)
 
-          if MODE == "sample":
+          if MODE == "ladder":
+              LD = json.load(open("ladder.json", encoding="utf8"))
+              mpath = "audio/ladder/manifest.json"
+              man = json.load(open(mpath)) if os.path.exists(mpath) else {}
+              if man.get("voice") != VOICE: man = {"voice": VOICE, "files": {}}
+              files = man.setdefault("files", {})
+              todo = []
+              for L in LD["lessons"]:
+                  for w in L["words"]:
+                      todo.append((f"{L['id']}/{w['a']}", w["w"], 0.9, w["h"]))
+                  for p in L["phrases"]:
+                      todo.append((f"{L['id']}/{p['a']}-n", p["en"], 1.0, p["h"]))
+                      todo.append((f"{L['id']}/{p['a']}-s", p["en"], 0.75, p["h"]))
+              made = 0
+              for key, text, speed, hh in todo:
+                  if files.get(key) == hh and os.path.exists(f"audio/ladder/{key}.mp3"):
+                      continue
+                  a, sr = synth(text, VOICE, speed)
+                  mp3(f"audio/ladder/{key}.mp3", a, sr)
+                  files[key] = hh; made += 1
+                  print(key, text, flush=True)
+              json.dump(man, open(mpath, "w"), indent=0)
+              print("generated", made, "of", len(todo))
+          elif MODE == "sample":
               report = {"wpm_target": WPM, "pause": PAUSE, "voices": {}}
               lines = ST[0]["lines"]
               for v in ["af_heart", "af_bella", "am_michael"]:
@@ -138,6 +164,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add audio
-          git commit -m "Story audio: ${{ inputs.mode }} (${{ inputs.voice }}, ${{ inputs.wpm }} wpm)" || echo "nothing to commit"
+          git commit -m "Audio: ${{ inputs.mode }} (${{ inputs.voice }}, ${{ inputs.wpm }} wpm)" || echo "nothing to commit"
           git pull --rebase
           git push
