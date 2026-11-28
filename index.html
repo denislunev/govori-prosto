@@ -78,6 +78,19 @@ textarea{width:100%;min-height:160px;border-radius:12px;border:2px solid var(--l
 @media(min-width:700px){.sticky{position:sticky;top:0;background:var(--sky);padding:8px 0;z-index:2}}
 .nav{display:flex;justify-content:space-between;align-items:center}
 label.chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:700}
+.lad{margin-top:16px;background:var(--card);border-radius:20px;padding:18px;border:2px solid var(--acc)}.lt{font-size:22px;font-weight:900;margin:4px 0}
+.formula{display:inline-block;margin:10px 0 0;padding:6px 12px;border-radius:12px;background:var(--card);font-weight:800}
+.stp{display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:8px 0;font-weight:800;font-size:17px;cursor:pointer;color:var(--ink)}
+.stp span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);flex:none;font-size:15px}
+.stp.cur span{background:var(--acc);border-color:var(--acc);color:#fff}.stp.done span{border-color:var(--ok);color:var(--ok)}.stp:disabled{color:var(--mute);cursor:default}
+.strip{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:8px 0 6px}.strip i{height:6px;border-radius:6px;background:var(--line)}.strip i.done{background:var(--ok)}.strip i.cur{background:var(--acc)}
+.bl:disabled{opacity:.55;cursor:default}.bl.done .n{color:var(--ok)}
+.exl{margin-top:14px;cursor:pointer;font-size:20px}.exl b mark,.en mark{background:none;color:var(--acc)}
+.tile{padding:8px 12px;border-radius:12px;border:2px solid var(--line);background:var(--card);font-weight:800;font-size:17px;cursor:pointer;margin:3px}.tile.on{border-color:var(--acc)}
+.built{min-height:48px;display:flex;flex-wrap:wrap;align-items:center;border-bottom:2px dashed var(--line);padding-bottom:6px}
+mark{background:none;color:var(--acc);font-weight:800}
+.typo{color:#b88a00;font-weight:800;text-decoration:underline dotted}
+.tbar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:8px 0}.tbar i{display:block;height:100%;width:100%;background:var(--acc)}
 </style>
 </head>
 <body>
@@ -117,7 +130,7 @@ function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';cl
 
 /* ---------- speech out ---------- */
 let voice=null;
-function pickVoice(){const v=(window.speechSynthesis&&speechSynthesis.getVoices())||[];const en=v.filter(x=>/^en[-_]US/i.test(x.lang));voice=en.find(x=>/natural|google|samantha|aria|jenny/i.test(x.name))||en[0]||v.find(x=>/^en/i.test(x.lang))||null}
+function pickVoice(){const v=(window.speechSynthesis&&speechSynthesis.getVoices())||[];const en=v.filter(x=>/^en[-_]US/i.test(x.lang));const loc=en.filter(x=>x.localService);voice=loc.find(x=>/google|samantha|natural/i.test(x.name))||loc[0]||en.find(x=>/natural|google|samantha|aria|jenny/i.test(x.name))||en[0]||v.find(x=>/^en/i.test(x.lang))||null}
 if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
 function speak(t,slow){if(!window.speechSynthesis){toast('Озвучка не поддерживается');return}
  const ss=speechSynthesis;try{if(typeof aud!=='undefined')aud.pause()}catch(e){}
@@ -126,7 +139,7 @@ function speak(t,slow){if(!window.speechSynthesis){toast('Озвучка не п
   u.onstart=()=>{started=true};
   u.onerror=e=>{if(sid!==speak.id||e.error==='interrupted'||e.error==='canceled')return;if(tries<1)attempt(false,tries+1);else toast('Голос телефона не отвечает ('+e.error+')')};
   try{ss.speak(u)}catch(e){}
-  setTimeout(()=>{if(sid!==speak.id||started||ss.speaking)return;if(tries<1){try{ss.cancel();ss.resume()}catch(e){}attempt(false,tries+1)}else toast('Голос телефона не отвечает. Проверь громкость и «Синтез речи» в настройках телефона.')},1600)};
+  if(tries===0)setTimeout(()=>{if(sid!==speak.id||started||ss.speaking)return;toast('Голос телефона не отвечает. Проверь громкость и «Синтез речи» в настройках телефона.')},4000)};
  try{if(ss.speaking||ss.pending)ss.cancel();if(ss.paused)ss.resume()}catch(e){}
  attempt(true,0)}
 speak.id=0;
@@ -154,7 +167,7 @@ const typeForm=ph=>`<form class="inp" id="f"><input id="t" placeholder="${ph}" a
 
 /* ---------- compare ---------- */
 const NUM={0:'zero',1:'one',2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',9:'nine',10:'ten',11:'eleven',12:'twelve',15:'fifteen',20:'twenty',30:'thirty'};
-const CON={"i'm":'i am',"don't":'do not',"didn't":'did not',"can't":'can not',cannot:'can not',"won't":'will not',"i'll":'i will',"we'll":'we will',"you'll":'you will',"it's":'it is',"let's":'let us',"that's":'that is',"i've":'i have',"you're":'you are',"we're":'we are',"isn't":'is not',"i'd":'i would',"what's":'what is',"there's":'there is',"she's":'she is',"he's":'he is',ok:'okay'};
+const CON={"i'm":'i am',"don't":'do not',"didn't":'did not',"can't":'can not',cannot:'can not',"won't":'will not',"i'll":'i will',"we'll":'we will',"you'll":'you will',"it's":'it is',"let's":'let us',"that's":'that is',"i've":'i have',"you're":'you are',"we're":'we are',"isn't":'is not',"i'd":'i would',"what's":'what is',"there's":'there is',"she's":'she is',"he's":'he is',ok:'okay',im:'i am',dont:'do not',didnt:'did not',cant:'can not',wont:'will not',thats:'that is',whats:'what is',youre:'you are',isnt:'is not',ive:'i have',lets:'let us',"could've":'could have'};
 function norm(s){return s.toLowerCase().replace(/[’`]/g,"'").replace(/(\d+):00/g,'$1').replace(/[^a-z0-9' ]+/g,' ').split(/\s+/).filter(Boolean).map(w=>NUM[w]||CON[w]||w).join(' ').split(' ').filter(Boolean)}
 function lcs(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},()=>new Array(n+1).fill(0));for(let i=m-1;i>=0;i--)for(let j=n-1;j>=0;j--)d[i][j]=a[i]===b[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);const hit=new Array(m).fill(false);let i=0,j=0;while(i<m&&j<n){if(a[i]===b[j]){hit[i]=true;i++;j++}else if(d[i+1][j]>=d[i][j+1])i++;else j++}return hit}
 function check(target,alts){const t=norm(target);let best=null;for(const a of alts){const hit=lcs(t,norm(a));const sc=hit.filter(Boolean).length/t.length;if(!best||sc>best.sc)best={sc,hit,said:a}}
@@ -170,7 +183,7 @@ function wordHit(word,toks){const parts=word.toLowerCase().split(/[ -]/).filter(
  return ps.every(p=>{const irr=MATCH.irr[p]||[];if(p.length<=4){const f=new Set([p,p+'s',p+'es',p+'d',p+'ed',p+'ing',p+p.slice(-1)+'ed',p+p.slice(-1)+'ing',p.slice(0,-1)+'ied',p.slice(0,-1)+'ies',p.slice(0,-1)+'ing',...irr]);return toks.some(t=>f.has(t))}const st=p.replace(/(e|y)$/,'');return toks.some(t=>t.startsWith(st)||irr.includes(t))})}
 const toksOf=s=>s.toLowerCase().replace(/[’`]/g,"'").match(/[a-z0-9']+/g)||[];
 let play={id:0,i:-1};
-function stopPlay(){play.id++;play.i=-1;try{speechSynthesis.cancel()}catch(e){}try{aud.pause()}catch(e){}markLine(-1)}
+function stopPlay(){play.id++;play.i=-1;try{speechSynthesis.cancel()}catch(e){}releaseAud();markLine(-1)}
 function markLine(i){app.querySelectorAll('.sl').forEach((e,k)=>e.classList.toggle('cur',k===i));const e=app.querySelector(`.sl[data-i="${i}"]`);if(e){const r=e.getBoundingClientRect();if(r.top<80||r.bottom>innerHeight-40)e.scrollIntoView({block:'center',behavior:'smooth'})}}
 function playFrom(lines,i,slow,onDone){const id=++play.id;
  const step=k=>{if(id!==play.id)return;if(k>=lines.length){play.i=-1;markLine(-1);if(onDone)onDone();return}play.i=k;markLine(k);
@@ -178,14 +191,15 @@ function playFrom(lines,i,slow,onDone){const id=++play.id;
    let done=false;const nx=()=>{if(done)return;done=true;setTimeout(()=>step(k+1),slow?220:60)};u.onend=nx;u.onerror=nx;speechSynthesis.speak(u);
    setTimeout(()=>{if(!done&&id===play.id&&!speechSynthesis.speaking)nx()},(slow?9000:6000))}catch(e){stopPlay()}};
  step(i)}
-let MAN=null,manTried=false;const aud=new Audio();aud.preload='auto';
+let MAN=null,manTried=false;const aud=new Audio();aud.preload='auto';const pre=new Audio();pre.preload='auto';
+function releaseAud(){try{aud.onended=null;aud.onerror=null;aud.pause();aud.removeAttribute('src');aud.load()}catch(e){}try{pre.removeAttribute('src');pre.load()}catch(e){}}
 async function loadMan(){if(manTried)return MAN;manTried=true;try{const r=await fetch('audio/stories/manifest.json',{cache:'no-cache'});if(r.ok)MAN=await r.json()}catch(e){}return MAN}
 const aUrl=(id,i)=>`audio/stories/${id}/${String(i).padStart(2,'0')}.mp3`;
 function playAudio(id,lines,i,onDone,single){const my=++play.id;const gap=Math.round(((MAN&&MAN.pause)||0.5)*1000);
  const step=k=>{if(my!==play.id)return;if(k>=lines.length||(single&&k>i)){play.i=-1;markLine(-1);if(onDone)onDone();return}
   play.i=k;markLine(k);aud.onended=()=>{if(my!==play.id)return;setTimeout(()=>step(k+1),single?0:gap)};
   aud.onerror=()=>{if(my!==play.id)return;play.id++;toast('Аудио не загрузилось — играю голосом телефона');playFrom(lines,k,true,onDone)};
-  aud.src=aUrl(id,k);aud.play().catch(()=>{});if(!single&&k+1<lines.length){const n=new Audio();n.preload='auto';n.src=aUrl(id,k+1)}};
+  aud.src=aUrl(id,k);aud.play().catch(()=>{});if(!single&&k+1<lines.length){pre.src=aUrl(id,k+1)}};
  step(i)}
 function story(){const bi=V.bi,s=ST[bi];if(!S.rt)S.rt={};
  const paras=[];for(let i=0;i<s.lines.length;i+=5)paras.push(s.lines.slice(i,i+5).map((l,k)=>`<span class="sl" data-i="${i+k}">${hl(l[1],l[0])}</span>`).join(' '));
@@ -242,20 +256,252 @@ function retell(){const bi=V.bi,s=ST[bi];if(!S.rt)S.rt={};
   V.res=null;retellStart(t=>{V.text=t;tx.value=t;tx.scrollTop=tx.scrollHeight},on=>{g.classList.toggle('on',on);g.textContent=on?'Стоп':'Начать пересказ'})};
 }
 
+/* ---------- ladder ---------- */
+let LD=null,ldP=null,LM=null,lmP=null;
+function loadLD(){if(!ldP)ldP=fetch('ladder.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{LD=j;return j}).catch(()=>null);return ldP}
+function loadLM(){if(!lmP)lmP=fetch('audio/ladder/manifest.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{LM=j}).catch(()=>{});return lmP}
+const LS=()=>{if(!S.L)S.L={ls:{},bank:{},wd:{}};return S.L};
+const LSTEPS=['Слова','Формула','Фразы','Говорение','Тест'];
+const lsn=id=>LD.lessons.find(l=>l.id===id);
+const crs=id=>LD.course.find(c=>c.id===id);
+const cIdx=id=>LD.course.findIndex(c=>c.id===id);
+const lrec=id=>{const s=LS();return s.ls[id]||(s.ls[id]={step:0,best:0,pass:0})};
+const pkey=(lid,p)=>lid+'-'+p.a;
+const pItem=(lid,p)=>{const L=lsn(lid),w=L.words.find(x=>x.w===p.uses[0])||{w:p.uses[0],ru:''};return{k:pkey(lid,p),lid,a:p.a,h:p.h,uses:p.uses,w:w.w,wr:w.ru,en:p.en,ru:p.ru}};
+const lItems=lid=>lsn(lid).phrases.map(p=>pItem(lid,p));
+const ofIds=c=>c.t==='lesson'?[c.id]:c.of;
+function cStat(id){const i=cIdx(id);if(i<0)return 'lock';const r=LS().ls[id];
+ if(r&&r.pass){const bank=LS().bank,d=day();const weak=ofIds(LD.course[i]).some(lid=>lItems(lid).some(x=>bank[x.k]||((S.p[x.k]||{}).seen&&S.p[x.k].due<=d)));return weak?'redo':'done'}
+ if(i===0)return 'open';const pv=LS().ls[LD.course[i-1].id];return pv&&pv.pass?'open':'lock'}
+const curItem=()=>LD.course.find(c=>cStat(c.id)==='open')||null;
+const ST_RU={lock:'закрыт',open:'открыт',done:'пройден',redo:'нужен повтор'};
+
+/* audio: prerecorded MP3 when the file exists for this exact text, otherwise the phone voice */
+function sayL(x,slow){const key=x.wa?`${x.lid}/${x.wa}`:`${x.lid}/${x.a}-${slow?'s':'n'}`;const text=x.wa?x.w:x.en;
+ const ok=LM&&LM.files&&LM.files[key]===x.h;
+ if(!ok){speak(text,slow);return}
+ try{speechSynthesis.cancel()}catch(e){}
+ const id=++sayL.id;aud.onended=null;aud.onerror=()=>{if(id===sayL.id)speak(text,slow)};aud.src='audio/ladder/'+key+'.mp3';aud.play().catch(()=>{})}
+sayL.id=0;
+const sayX=(x,slow)=>x.lid?sayL(x,slow):speak(x.en,slow);
+function prefetchLesson(lid){const L=lsn(lid),urls=[];L.words.forEach(w=>urls.push(`audio/ladder/${lid}/${w.a}.mp3`));L.phrases.forEach(p=>{urls.push(`audio/ladder/${lid}/${p.a}-n.mp3`,`audio/ladder/${lid}/${p.a}-s.mp3`)});
+ return Promise.all(urls.map(u=>fetch(u).then(r=>r.ok).catch(()=>false))).then(r=>r.filter(Boolean).length)}
+
+/* answer check with one-typo tolerance for typed words of 5+ letters */
+function lev1(a,b){if(a===b)return true;if(Math.abs(a.length-b.length)>1)return false;let i=0;while(i<a.length&&a[i]===b[i])i++;
+ return a.slice(i+1)===b.slice(i+1)||a.slice(i)===b.slice(i+1)||a.slice(i+1)===b.slice(i)}
+function checkL(x,alts,typed){const t=norm(x.en);let best=null;
+ for(const a of alts){let s=norm(a),fix=new Set();if(typed)s=s.map(w=>{if(t.includes(w))return w;const m=t.find(z=>z.length>=5&&lev1(z,w));if(m){fix.add(m);return m}return w});
+  const hit=lcs(t,s);const sc=hit.filter(Boolean).length/t.length;const word=x.uses.every(u=>wordHit(u,s));
+  if(!best||sc+(word?1:0)>best.sc+(best.word?1:0))best={sc,hit,said:a,fix,word}}
+ const pass=best.sc>=0.9&&best.word;
+ const words=t.map((w,i)=>`<span class="${best.hit[i]?(best.fix.has(w)?'typo':'ok'):'miss'}">${esc(w)}</span>`).join(' ');
+ const v=pass?['ok',best.fix.size?'Верно! Жёлтым — опечатка.':'Верно!']:best.sc>=0.6?['','Почти. Красным — что пропало.']:['miss','Неверно.'];
+ return{pass,sc:best.sc,html:`<div class="said"><div class="verdict ${v[0]}">${v[1]}</div><p class="small mute">${typed?'Написал':'Услышал'}: «${esc(best.said)}»</p><p>${words}</p></div>`}}
+const hlL=(en,uses)=>{let e=esc(en);uses.forEach(u=>{const ws=u.split(' ').map(w=>w.replace(/[^a-z']/gi,''));const st=ws.map(w=>w.length>4?w.replace(/(e|y)$/,'')+"[a-z']*":w+"[a-z']*");
+ e=e.replace(new RegExp('\\b('+st.join("(?:\\s+\\w+)?\\s+")+')','i'),'<mark>$1</mark>')});return e};
+
+/* spaced repetition + mistakes bank */
+function grade(x,g){const s=st(x.k),b=LS().bank;s.seen=1;
+ if(g===0){s.box=1;s.due=day()+1;b[x.k]=0}
+ else{s.box=Math.min(5,s.box+(g===2?2:1));s.due=day()+IV[s.box];if(b[x.k]!=null){b[x.k]++;if(b[x.k]>=3)delete b[x.k]}}
+ save()}
+
+/* ---------- ladder views ---------- */
+const navTop=(cnt)=>`<div class="nav"><button class="back" id="home">← Назад</button><button class="back" id="hm">Главная</button></div>${cnt?`<div class="cnt">${cnt}</div>`:''}`;
+function needLD(){if(LD)return true;app.innerHTML=`<div class="top"><div class="wrap">${navTop('')}<h1 style="font-size:32px">Лестница</h1><p class="mute">Загружаю уроки…</p></div></div>`;
+ $('#home').onclick=()=>go({v:'home'});loadLD().then(j=>{if(j)render();else{app.querySelector('.mute').textContent='Не удалось загрузить уроки. Проверь интернет и открой ещё раз.'}});return false}
+function ladderCard(){if(!LD)return `<div class="lad"><div class="cnt">Лестница</div><p class="mute">Загружаю уроки…</p></div>`;
+ const c=curItem(),n=LD.course.length,done=LD.course.filter(x=>LS().ls[x.id]&&LS().ls[x.id].pass).length;
+ const t=c?(c.t==='lesson'?`Урок ${cIdx(c.id)+1-LD.course.slice(0,cIdx(c.id)).filter(x=>x.t!=='lesson').length} · ${esc(lsn(c.id).title)}`:`Марафон ${c.id.slice(1)} · 50 фраз`):'Все уроки пройдены';
+ const r=c&&c.t==='lesson'?lrec(c.id):null;
+ return `<div class="lad"><div class="cnt">Лестница · живой американский английский</div><div class="lt">${t}</div>
+ ${r?`<p class="small mute">Шаг ${r.step+1} из 5: ${LSTEPS[r.step]}</p>`:''}
+ <div class="bar"><i style="width:${done/n*100}%"></i></div><p class="small mute">Пройдено ${done} из ${n}</p>
+ <div class="row">${c?'<button class="btn pri" id="lgo">Продолжить</button>':''}<button class="btn" id="lmap">Все уроки</button></div></div>`}
+function bindLadderCard(){const g=$('#lgo');if(g)g.onclick=()=>{const c=curItem();if(c.t==='lesson')go({v:'lstep',id:c.id,step:lrec(c.id).step,i:0});else go({v:'marathon',id:c.id})};
+ const m=$('#lmap');if(m)m.onclick=()=>go({v:'ladder'})}
+function labelOf(c){let n=0;for(const x of LD.course){if(x.t==='lesson')n++;if(x.id===c.id)break}return c.t==='lesson'?`Урок ${n}`:`Марафон ${c.id.slice(1)}`}
+function ladder(){if(!needLD())return;const bank=Object.keys(LS().bank).length;
+ app.innerHTML=`<div class="top"><div class="wrap">${navTop('')}<h1 style="font-size:clamp(30px,7vw,40px)">Лестница</h1>
+ <p class="mute">Одна живая конструкция на урок. Следующий урок открывается, когда тест сдан на 85%.</p></div></div>
+ <div class="main"><div class="wrap">${LD.course.map(c=>{const s=cStat(c.id),r=LS().ls[c.id];const sub=c.t==='lesson'?esc(lsn(c.id).title):'50 фраз из 5 уроков вперемешку';
+  return `<button class="bl ${s}" data-c="${c.id}" ${s==='lock'?'disabled':''}><span class="n">${s==='lock'?'🔒':s==='done'?'✓':c.t==='lesson'?labelOf(c).slice(5):'★'}</span><span class="t"><b>${labelOf(c)} · ${sub}</b><span class="small mute">${ST_RU[s]}${r&&r.best?` · лучший тест ${r.best}%`:''}</span></span></button>`}).join('')}
+ <div class="row"><button class="btn ${bank?'pri':''}" id="bank" ${bank?'':'disabled'}>Отработать слабые места${bank?` · ${bank}`:''}</button></div>
+ <h2>Резервная копия</h2><p class="small mute">Прогресс хранится только в этом браузере. Сохрани файл, чтобы перенести прогресс на другое устройство.</p>
+ <div class="row"><button class="btn" id="bsave">Сохранить прогресс</button><button class="btn" id="bload">Загрузить прогресс</button><input type="file" id="bfile" accept=".json,application/json" hidden></div>
+ </div></div>`;
+ app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const c=crs(b.dataset.c);if(c.t==='lesson')go({v:'lesson',id:c.id});else go({v:'marathon',id:c.id})});
+ $('#home').onclick=()=>go({v:'home'});
+ $('#bank').onclick=()=>{const ks=Object.keys(LS().bank),q=[];LD.lessons.forEach(L=>lItems(L.id).forEach(x=>{if(ks.includes(x.k))q.push(x)}));go({v:'drill',from:'ladder',title:'Слабые места',q:shuffle(q),n:0,shown:false,res:''})};
+ $('#bsave').onclick=backupSave;$('#bload').onclick=()=>$('#bfile').click();
+ $('#bfile').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(backupLoad)};
+}
+function backupSave(){const txt=JSON.stringify({app:'govori-prosto',v:1,at:new Date().toISOString(),S});
+ try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download=`govori-progress-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast('Файл сохранён в «Загрузки»')}catch(e){toast('Не получилось сохранить файл')}}
+function backupLoad(txt){try{const j=JSON.parse(txt);if(j.app!=='govori-prosto'||!j.S||typeof j.S.p!=='object')throw 0;S=Object.assign({p:{},auto:true,rate:0.9},j.S);save();toast('Прогресс загружен');render()}catch(e){toast('Это не файл прогресса «Говори просто»')}}
+
+function lesson(){if(!needLD())return;const L=lsn(V.id),r=lrec(V.id),s=cStat(V.id);
+ if(s==='lock'){go({v:'ladder'});return}
+ app.innerHTML=`<div class="top"><div class="wrap">${navTop(labelOf(crs(V.id))+' · '+esc(L.level))}<h1 style="font-size:clamp(30px,7vw,40px)">${esc(L.title)}</h1>
+ <div class="formula">${esc(L.formula)}</div>
+ <div class="today">${LSTEPS.map((n,i)=>`<button class="stp ${i<r.step||r.pass?'done':i===r.step?'cur':''}" data-s="${i}" ${i>r.step&&!r.pass?'disabled':''}><span>${i<r.step||r.pass?'✓':i+1}</span> ${n}${i===0?' · 12':i===2||i===3?' · 10':i===4?(r.best?` · лучший ${r.best}%`:' · 10 заданий'):''}</button>`).join('')}
+ <div class="row"><button class="btn pri" id="cont">${r.pass?'Пройти тест ещё раз':r.step?'Продолжить':'Начать урок'}</button></div></div>
+ <div class="row"><button class="btn ghost" id="off">Скачать звук урока для офлайна</button></div></div></div>`;
+ $('#home').onclick=()=>go({v:'ladder'});
+ app.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>go({v:'lstep',id:V.id,step:+b.dataset.s,i:0}));
+ $('#cont').onclick=()=>go({v:'lstep',id:V.id,step:r.pass?4:r.step,i:0});
+ $('#off').onclick=()=>{toast('Скачиваю…');loadLM().then(()=>prefetchLesson(V.id)).then(n=>toast(n?`Готово: ${n} файлов доступны без интернета`:'Звук урока ещё не записан — работает голос телефона'))};
+}
+function strip(id,step){const r=lrec(id);return `<div class="strip">${LSTEPS.map((n,i)=>`<i class="${i<step||(r.pass&&i!==step)?'done':i===step?'cur':''}" title="${n}"></i>`).join('')}</div><div class="cnt">${labelOf(crs(id))} · шаг ${step+1} из 5 · ${LSTEPS[step]}</div>`}
+function advance(id,step){const r=lrec(id);if(r.step<step+1&&step<4)r.step=step+1;save();go({v:'lstep',id,step:step+1,i:0})}
+function lstep(){if(!needLD())return;if(cStat(V.id)==='lock'){go({v:'ladder'});return}
+ loadLM();[stWords,stFormula,stPhrases,stSpeak,stTest][V.step]()}
+
+function stWords(){const L=lsn(V.id),nw=L.words.filter(w=>!w.known),kn=L.words.filter(w=>w.known);const i=V.i,w=nw[i],ex=L.phrases[w.ex];
+ const x={lid:V.id,wa:w.a,h:w.h,w:w.w};LS().wd[V.id+'/'+w.a]=1;
+ app.innerHTML=`<div class="top"><div class="wrap">${navTop('')}${strip(V.id,0)}
+ ${i===0&&kn.length?`<p class="small mute" style="margin-top:8px">Знакомые слова урока: ${kn.map(k=>`<span class="chip gone">${esc(k.w)} — ${esc(k.ru)}</span>`).join(' ')}</p>`:''}
+ <div class="card"><div class="cnt">Новое слово ${i+1} из ${nw.length}</div><div class="en">${esc(w.w)}</div><div class="ru">${esc(w.ru)}</div>
+ <p style="margin-top:14px">${hlL(ex.en,[w.w])}<br><span class="mute small">${esc(ex.ru)}</span></p>
+ <div class="row"><button class="btn" id="play">Слушать</button>${micBtn()}</div><div id="res"></div></div>
+ <p class="small mute" style="margin-top:12px">Послушай и скажи слово вслух 2–3 раза.</p>
+ <div class="row"><button class="btn pri" id="next">${i+1<nw.length?'Дальше':'К формуле →'}</button></div></div></div>`;
+ sayL(x);
+ $('#home').onclick=()=>go({v:'lesson',id:V.id});
+ $('#play').onclick=()=>sayL(x);
+ const mic=$('#mic');if(mic)mic.onclick=()=>listen(mic,alts=>{$('#res').innerHTML=check(w.w,alts).html});
+ $('#next').onclick=()=>{if(i+1<nw.length){V.i++;render();scrollTo(0,0)}else advance(V.id,0)};
+}
+function stFormula(){const L=lsn(V.id),ps=L.phrases,ex=[ps[0],ps[Math.floor(ps.length/2)],ps[ps.length-1]].map(p=>pItem(V.id,p));
+ app.innerHTML=`<div class="top"><div class="wrap">${navTop('')}${strip(V.id,1)}
+ <div class="card"><div class="cnt">Формула урока</div><div class="en">${esc(L.formula)}</div>
+ ${ex.map((x,k)=>`<div class="exl" data-k="${k}"><b>${hlL(x.en,x.uses)}</b><br><span class="mute small">${esc(x.ru)}</span></div>`).join('')}</div>
+ <p class="small mute" style="margin-top:12px">Нажми на пример — услышишь его. Все фразы урока строятся так же.</p>
+ <div class="row"><button class="btn pri" id="next">К фразам →</button></div></div></div>`;
+ app.querySelectorAll('[data-k]').forEach(e=>e.onclick=()=>sayL(ex[+e.dataset.k]));
+ $('#home').onclick=()=>go({v:'lesson',id:V.id});
+ $('#next').onclick=()=>advance(V.id,1);
+}
+function stPhrases(){const q=lItems(V.id),i=V.i,x=q[i],set=i<5?1:2;
+ app.innerHTML=`<div class="top"><div class="wrap">${navTop('')}${strip(V.id,2)}
+ <div class="card"><div class="cnt">Подход ${set} из 2 · фраза ${i%5+1} из 5</div><div class="en">${hlL(x.en,x.uses)}</div><div class="ru">${esc(x.ru)}</div>
+ <div class="row"><button class="btn" id="play">Слушать</button><button class="btn" id="slow">Медленно</button>${micBtn()}</div>
+ ${micOK?'':typeForm('напиши фразу по памяти')}<div id="res">${V.res||''}</div></div>
+ <p class="small mute" style="margin-top:12px">Скажи вслух 3 раза.</p>
+ <div class="row"><button class="btn pri" id="next">${i+1<q.length?'Дальше':'К говорению →'}</button></div></div></div>`;
+ if(S.auto)sayL(x);
+ $('#home').onclick=()=>go({v:'lesson',id:V.id});
+ $('#play').onclick=()=>sayL(x);$('#slow').onclick=()=>sayL(x,true);
+ const got=(alts,typed)=>{const c=checkL(x,alts,typed);V.res=c.html;$('#res').innerHTML=c.html};
+ const mic=$('#mic');if(mic)mic.onclick=()=>listen(mic,a=>got(a,false));
+ const f=$('#f');if(f)f.onsubmit=e=>{e.preventDefault();const v=$('#t').value.trim();if(v)got([v],true)};
+ $('#next').onclick=()=>{const s=st(x.k);if(!s.seen){s.seen=1;s.box=0;s.due=day()+1;save()}if(i+1<q.length){V.i++;V.res='';render();scrollTo(0,0)}else advance(V.id,2)};
+}
+
+/* one ru→en card used by speaking step, weak-spot drill */
+function sayCard(o){const x=o.x,ear=o.ear,shown=V.shown;
+ return `<div class="card"><div class="cnt">${ear?'Послушай и повтори по-английски':'Скажи по-английски'}</div>
+ ${ear&&!shown?`<div class="row"><button class="btn" id="play">Слушать ещё раз</button><button class="btn" id="slow">Медленно</button></div>`:`<div class="ru q">${esc(x.ru)}</div>`}
+ ${shown?`<div class="en">${hlL(x.en,x.uses)}</div>${ear?`<div class="ru">${esc(x.ru)}</div>`:''}`:''}
+ ${V.tiles&&!shown?tilesHtml():''}
+ <div class="row">${shown?'<button class="btn" id="play">Слушать</button><button class="btn" id="slow">Медленно</button>':micBtn('pri')+(V.tiles?'':'<button class="btn" id="tl">Собрать из слов</button>')+'<button class="btn ghost" id="show">Не помню — показать</button>'}</div>
+ ${shown||V.tiles?'':typeForm(micOK?'или напиши здесь':'напиши по-английски')}
+ <div id="res">${V.res||''}</div>
+ ${shown?`<p class="small mute" style="margin-top:12px">Как прошло?</p><div class="rate"><button class="btn" data-g="0">Трудно</button><button class="btn" data-g="1">Нормально</button><button class="btn" data-g="2">Легко</button></div>`:''}</div>`}
+function tilesHtml(){const T=V.tiles;return `<div class="said"><div class="built">${T.pick.map((k,j)=>`<button class="tile on" data-u="${j}">${esc(T.all[k])}</button>`).join('')||'<span class="mute small">Нажимай слова по порядку</span>'}</div>
+ <div class="chips">${T.all.map((w,k)=>T.pick.includes(k)?'':`<button class="tile" data-t="${k}">${esc(w)}</button>`).join('')}</div>
+ <div class="row"><button class="btn pri" id="tck" ${T.pick.length===T.all.length?'':'disabled'}>Проверить</button></div></div>`}
+function bindSayCard(x,ear,onGrade){
+ const reveal=h=>{V.res=h||'';V.shown=true;V.tiles=null;render();sayL(x)};
+ const got=(alts,typed)=>{const c=checkL(x,alts,typed);if(V.shown){V.res=c.html;$('#res').innerHTML=c.html}else reveal(c.html)};
+ const mic=$('#mic');if(mic)mic.onclick=()=>listen(mic,a=>got(a,false));
+ const f=$('#f');if(f)f.onsubmit=e=>{e.preventDefault();const v=$('#t').value.trim();if(v)got([v],true)};
+ const pl=$('#play');if(pl)pl.onclick=()=>sayL(x);const sl=$('#slow');if(sl)sl.onclick=()=>sayL(x,true);
+ const sh=$('#show');if(sh)sh.onclick=()=>reveal('');
+ const tl=$('#tl');if(tl)tl.onclick=()=>{V.tiles={all:shuffle(x.en.replace(/[.,!?]/g,'').split(' ')),pick:[]};render()};
+ app.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{V.tiles.pick.push(+b.dataset.t);render()});
+ app.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{V.tiles.pick.splice(+b.dataset.u,1);render()});
+ const tk=$('#tck');if(tk)tk.onclick=()=>got([V.tiles.pick.map(k=>V.tiles.all[k]).join(' ')],true);
+ app.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>onGrade(+b.dataset.g));
+ if(ear&&!V.shown&&!V.heard){V.heard=1;sayL(x)}}
+function stSpeak(){if(!V.q){const q=shuffle(lItems(V.id));V.q=q.map((x,k)=>({x,ear:k%3===2}));V.n=0;V.again={}}
+ if(V.n>=V.q.length){advance(V.id,3);return}
+ const o=V.q[V.n];
+ app.innerHTML=`<div class="top"><div class="wrap">${navTop('')}${strip(V.id,3)}<p class="small mute">Фраза ${Math.min(V.n+1,V.q.length)} из ${V.q.length}</p>${sayCard(o)}</div></div>`;
+ $('#home').onclick=()=>go({v:'lesson',id:V.id});
+ bindSayCard(o.x,o.ear,g=>{grade(o.x,g);if(g===0&&!V.again[o.x.k]){V.again[o.x.k]=1;V.q.push({x:o.x,ear:false})}V.n++;V.shown=false;V.res='';V.heard=0;V.tiles=null;render();scrollTo(0,0)});
+}
+function drill(){if(!needLD())return;if(V.n>=V.q.length){app.innerHTML=`<div class="top"><div class="wrap"><h1>Готово.</h1><p>Фраза уходит из слабых мест после 3 верных ответов подряд.</p><div class="row"><button class="btn pri" id="home">К урокам</button></div></div></div>`;$('#home').onclick=()=>go({v:'ladder'});return}
+ const x=V.q[V.n];
+ app.innerHTML=`<div class="top"><div class="wrap">${navTop(esc(V.title)+` · ${V.n+1} из ${V.q.length}`)}${sayCard({x,ear:false})}</div></div>`;
+ $('#home').onclick=()=>go({v:V.from||'ladder',id:V.lid});
+ bindSayCard(x,false,g=>{grade(x,g);V.n++;V.shown=false;V.res='';V.tiles=null;render();scrollTo(0,0)});
+}
+
+/* test (10 tasks, 70/30) and marathon (50 phrases) share one runner */
+function buildTest(id){const own=shuffle(lItems(id)),i=cIdx(id);
+ const prev=LD.course.slice(0,i).filter(c=>c.t==='lesson').flatMap(c=>lItems(c.id));
+ if(!prev.length)return own.slice(0,10);
+ const bank=LS().bank,d=day(),score=x=>(bank[x.k]!=null?100:0)+(((S.p[x.k]||{}).due||1e9)<=d?10:0)+Math.random();
+ const old=prev.sort((a,b)=>score(b)-score(a)).slice(0,3);return shuffle(own.slice(0,10-old.length).concat(old))}
+function stTest(){if(!V.q){V.q=buildTest(V.id);V.n=0;V.ok=0;V.wrong=[];V.ans=null}runExam({kind:'test',head:navTop('')+strip(V.id,4),back:()=>go({v:'lesson',id:V.id})})}
+function marathon(){if(!needLD())return;const c=crs(V.id);if(cStat(V.id)==='lock'){go({v:'ladder'});return}
+ if(!V.q){V.q=shuffle(c.of.flatMap(lItems));V.n=0;V.ok=0;V.wrong=[];V.ans=null}
+ if(V.timer==null)V.timer=!!S.mtimer;
+ runExam({kind:'marathon',head:`${navTop('')}<div class="cnt">${labelOf(c)} · ${V.q.length} фраз вперемешку</div>`,back:()=>go({v:'ladder'})})}
+let exT=null;
+function runExam(o){clearTimeout(exT);const id=V.id,total=V.q.length;
+ if(V.n>=total){const pct=Math.round(V.ok/total*100),r=lrec(id),passed=pct>=85;
+  if(pct>r.best)r.best=pct;if(passed){r.pass=1;r.at=day();r.step=4}save();
+  const nx=LD.course[cIdx(id)+1];
+  app.innerHTML=`<div class="top"><div class="wrap">${o.kind==='test'?navTop('')+strip(id,4):navTop('')}<h1>${pct}%</h1>
+  <p class="verdict ${passed?'ok':'miss'}">${passed?(nx?'Сдано! Следующая ступень открыта.':'Сдано! Это была последняя ступень.'):'Нужно 85%. Повтори ошибки и попробуй снова.'}</p>
+  <p class="mute">Верно ${V.ok} из ${total}.</p>
+  ${V.wrong.length?`<ul class="list">${V.wrong.map(x=>`<li data-k="${esc(x.k)}"><b>${esc(x.en)}</b><br><span class="mute small">${esc(x.ru)}</span></li>`).join('')}</ul>`:''}
+  <div class="row">${passed&&nx?`<button class="btn pri" id="nx">${nx.t==='lesson'?'Следующий урок →':'К марафону →'}</button>`:''}${V.wrong.length?`<button class="btn ${passed?'':'pri'}" id="fix">Повторить ошибки</button>`:''}<button class="btn" id="again">${o.kind==='test'?'Тест снова':'Марафон снова'}</button><button class="btn ghost" id="map">Все уроки</button></div></div></div>`;
+  app.querySelectorAll('[data-k]').forEach(l=>l.onclick=()=>sayL(V.wrong.find(x=>x.k===l.dataset.k)));
+  $('#home').onclick=o.back;
+  const n=$('#nx');if(n)n.onclick=()=>nx.t==='lesson'?go({v:'lstep',id:nx.id,step:lrec(nx.id).step,i:0}):go({v:'marathon',id:nx.id});
+  const f=$('#fix');if(f)f.onclick=()=>go({v:'drill',from:o.kind==='test'?'lesson':'ladder',lid:id,title:'Ошибки',q:V.wrong.slice(),n:0,shown:false,res:''});
+  $('#again').onclick=()=>go(o.kind==='test'?{v:'lstep',id,step:4,i:0}:{v:'marathon',id});
+  $('#map').onclick=()=>go({v:'ladder'});return}
+ const x=V.q[V.n],a=V.ans;
+ app.innerHTML=`<div class="top"><div class="wrap">${o.head}
+ <div class="bar"><i style="width:${V.n/total*100}%"></i></div><p class="small mute">Задание ${V.n+1} из ${total} · без подсказок${o.kind==='marathon'?` · <label style="display:inline"><input type="checkbox" id="tm" ${V.timer?'checked':''}> 10 секунд</label>`:''}</p>
+ <div class="card"><div class="cnt">Скажи по-английски</div><div class="ru q">${esc(x.ru)}</div>
+ ${o.kind==='marathon'&&V.timer&&!a?'<div class="tbar"><i id="tb"></i></div>':''}
+ ${a?`${a.html}<div class="en">${hlL(x.en,x.uses)}</div><div class="row"><button class="btn" id="play">Слушать</button></div>`:`<div class="row">${micBtn('pri')}</div>${typeForm(micOK?'или напиши здесь':'напиши по-английски')}`}
+ </div>${a?'<div class="row"><button class="btn pri" id="next">Дальше</button></div>':''}</div></div>`;
+ $('#home').onclick=o.back;
+ const finish=(alts,typed)=>{if(V.ans)return;clearTimeout(exT);const c=alts?checkL(x,alts,typed):{pass:false,html:'<div class="said"><div class="verdict miss">Время вышло.</div></div>'};
+  V.ans={pass:c.pass,html:c.html};const s=st(x.k),b=LS().bank;s.seen=1;
+  if(c.pass){V.ok++;s.box=Math.min(5,s.box+1);s.due=day()+IV[s.box];if(b[x.k]!=null){b[x.k]++;if(b[x.k]>=3)delete b[x.k]}}
+  else{V.wrong.push(x);s.box=1;s.due=day()+1;b[x.k]=0}
+  save();render();sayL(x)};
+ if(!a){const mic=$('#mic');if(mic)mic.onclick=()=>listen(mic,al=>finish(al,false));
+  $('#f').onsubmit=e=>{e.preventDefault();const v=$('#t').value.trim();if(v)finish([v],true)};
+  const tm=$('#tm');if(tm)tm.onchange=e=>{V.timer=S.mtimer=e.target.checked;save();render()};
+  if(o.kind==='marathon'&&V.timer){const tb=$('#tb');if(tb)requestAnimationFrame(()=>{tb.style.transition='width 10s linear';tb.style.width='0%'});exT=setTimeout(()=>{if(V.q&&V.q[V.n]===x)finish(null)},10000)}}
+ else{$('#play').onclick=()=>sayL(x);$('#next').onclick=()=>{V.n++;V.ans=null;render();scrollTo(0,0)}}
+}
+
 /* ---------- views ---------- */
 let V={v:'home'};
 function go(v){if(play.i>=0)stopPlay();if(rtOn)retellStop();V=v;if(rec){try{rec.abort()}catch(e){}resetMic()}render();scrollTo(0,0)}
-function due(){const d=day(),r=[];B.forEach((b,bi)=>b.items.forEach((_,i)=>{const s=S.p[b.id+'-'+i];if(s&&s.seen&&s.due<=d)r.push(it(bi,i))}));return r}
+function due(){const d=day(),r=[];B.forEach((b,bi)=>b.items.forEach((_,i)=>{const s=S.p[b.id+'-'+i];if(s&&s.seen&&s.due<=d)r.push(it(bi,i))}));
+ if(LD)LD.lessons.forEach(L=>lItems(L.id).forEach(x=>{const s=S.p[x.k];if(s&&s.seen&&s.due<=d)r.push(x)}));return r}
 function bstats(bi){let seen=0,learned=0;B[bi].items.forEach((_,i)=>{const s=S.p[B[bi].id+'-'+i];if(s&&s.seen)seen++;if(s&&s.box>=3)learned++});return{seen,learned}}
 
 function home(){
  const d=due();
  const card=bi=>{const s=bstats(bi);return`<button class="bl" data-b="${bi}"><span class="n">${bi+1}</span><span class="t"><b>${esc(B[bi].cat)}</b><span class="small mute">Знакомо ${s.seen}/25 · закреплено ${s.learned}</span><span class="bar"><i style="width:${s.learned/25*100}%"></i></span></span></button>`};
- app.innerHTML=`<div class="top"><div class="wrap"><h1>Говори просто.</h1><p>500 слов в коротких фразах. Много повторов. Просто, быстро, понятно.</p>
+ app.innerHTML=`<div class="top"><div class="wrap"><h1>Говори просто.</h1><p>Живые американские фразы и 500 слов. Много повторов. Просто, быстро, понятно.</p>
+ ${ladderCard()}
  <div class="today"><div class="cnt">Повтор на сегодня</div><div class="big">${d.length}</div><p class="mute small">${d.length?'Фразы, которые пора вспомнить. Сначала их, потом новое.':'Повторять пока нечего. Начни с блока 1.'}</p>
  <div class="row">${d.length?'<button class="btn pri" id="rev">Повторить</button>':''}<button class="btn" id="simp">Тренажёр «Упрости»</button></div></div></div></div>
  <div class="main"><div class="wrap">
- <div class="round">Круг 1 · блоки 1–10 · по одному из каждой темы</div>${[...Array(10).keys()].map(card).join('')}
+ <h2>Блоки слов</h2><div class="round">Круг 1 · блоки 1–10 · по одному из каждой темы</div>${[...Array(10).keys()].map(card).join('')}
  <div class="round">Круг 2 · блоки 11–20 · те же темы глубже</div>${[...Array(10).keys()].map(i=>card(i+10)).join('')}
  <h2>Пять правил</h2><ol class="rules">
  <li>Одна мысль — одно короткое предложение.</li>
@@ -266,16 +512,18 @@ function home(){
  <h2>Настройки</h2>
  <label class="chk"><input type="checkbox" id="auto" ${S.auto?'checked':''}> Озвучивать фразу сразу</label>
  <label class="chk">Скорость речи <input type="range" id="rate" min="0.6" max="1.1" step="0.05" value="${S.rate}" style="flex:1"></label>
+ <div class="row"><button class="btn" id="bsave">Сохранить прогресс в файл</button><button class="btn" id="bload">Загрузить из файла</button><input type="file" id="bfile" accept=".json,application/json" hidden></div>
  <div class="row"><button class="btn ghost" id="reset">Сбросить прогресс</button></div>
  <p class="small mute" style="margin-top:14px">Повтор: «Трудно» — завтра снова; «Нормально» — через 1, 3, 7, 21, 60 дней; «Легко» — через шаг. Прогресс хранится в этом браузере.${micOK?'':' Голосовая проверка здесь недоступна — открой приложение по своей ссылке в Chrome.'}</p>
  <p class="small" style="margin-top:14px"><a href="privacy.html" style="color:var(--acc);font-weight:800">Политика и отказ от ответственности</a> · приложение предоставляется «как есть».</p>
  </div></div>`;
  app.querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>go({v:'block',bi:+b.dataset.b}));
+ bindLadderCard();$('#bsave').onclick=backupSave;$('#bload').onclick=()=>$('#bfile').click();$('#bfile').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(backupLoad)};
  const rv=$('#rev');if(rv)rv.onclick=()=>startPractice('ru',shuffle(d),'Повтор');
  $('#simp').onclick=()=>go({v:'simple',i:0,show:false});
  $('#auto').onchange=e=>{S.auto=e.target.checked;save()};
  $('#rate').oninput=e=>{S.rate=+e.target.value;save()};
- $('#reset').onclick=()=>{const b=$('#reset');if(b.dataset.sure){S.p={};save();render();toast('Прогресс сброшен')}else{b.dataset.sure=1;b.textContent='Точно сбросить? Нажми ещё раз'}};
+ $('#reset').onclick=()=>{const b=$('#reset');if(b.dataset.sure){S.p={};S.L=null;S.rt={};save();render();toast('Прогресс сброшен')}else{b.dataset.sure=1;b.textContent='Точно сбросить? Нажми ещё раз'}};
 }
 function block(){const bi=V.bi,s=bstats(bi);
  app.innerHTML=`<div class="top"><div class="wrap"><div class="nav"><button class="back" id="home">← Назад</button><button class="back" id="hm">Главная</button></div><h1 style="font-size:clamp(30px,7vw,40px)">${esc(T(bi))}</h1>
@@ -300,7 +548,7 @@ function block(){const bi=V.bi,s=bstats(bi);
 }
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
-function startPractice(mode,q,title){const from=V.v==='block'?V.bi:null;V={v:'practice',mode,q,title,from,n:0,total:q.length,good:0,hard:0,shown:false,res:'',hint:false};render();scrollTo(0,0);if(S.auto&&mode==='listen')speak(q[0].en)}
+function startPractice(mode,q,title){const from=V.v==='block'?V.bi:null;V={v:'practice',mode,q,title,from,n:0,total:q.length,good:0,hard:0,shown:false,res:'',hint:false};render();scrollTo(0,0);if(S.auto&&mode==='listen')sayX(q[0])}
 const backTo=P=>P.from!=null?{v:'block',bi:P.from}:{v:'home'};
 
 function practice(){
@@ -313,7 +561,7 @@ function practice(){
   ${micOK?'':typeForm('напиши фразу по памяти')}
   <div id="res">${P.res}</div></div><p class="small mute" style="margin-top:12px">Послушай → скажи вслух 3 раза → ${micOK?'нажми «Сказать» для проверки':'напиши по памяти для проверки'}.</p>
   <div class="row"><button class="btn pri" id="next">Дальше</button></div></div></div>`;
-  $('#next').onclick=()=>{if(!s.seen){s.seen=1;s.box=0;s.due=day()+1;save()}P.n++;P.res='';render();const y=P.q[P.n];if(y&&S.auto)speak(y.en)};
+  $('#next').onclick=()=>{if(!s.seen){s.seen=1;s.box=0;s.due=day()+1;save()}P.n++;P.res='';render();const y=P.q[P.n];if(y&&S.auto)sayX(y)};
   const got=alts=>{const c=check(x.en,alts);P.res=c.html;$('#res').innerHTML=c.html;if(c.sc>=0.9){s.said++;save()}};
   const mic=$('#mic');if(mic)mic.onclick=()=>listen(mic,got);
   const f=$('#f');if(f)f.onsubmit=e=>{e.preventDefault();const v=$('#t').value.trim();if(v)got([v])};
@@ -327,7 +575,7 @@ function practice(){
   <div id="res">${P.res}</div>
   ${shown?`<p class="small mute" style="margin-top:12px">Как прошло?</p><div class="rate"><button class="btn" data-g="0">Трудно</button><button class="btn" data-g="1">Нормально</button><button class="btn" data-g="2">Легко</button></div>`:''}
   </div></div></div>`;
-  const reveal=r=>{P.res=r||'';P.shown=true;render();speak(x.en)};
+  const reveal=r=>{P.res=r||'';P.shown=true;render();sayX(x)};
   const h=$('#hint');if(h)h.onclick=()=>{P.hint=true;render()};
   const sh=$('#show');if(sh)sh.onclick=()=>{P.usedShow=true;reveal('')};
   const got=alts=>{const c=check(x.en,alts);if(c.sc>=0.9&&!P.hint&&!P.usedShow&&!P.shown)s.said++;save();if(P.shown){P.res=c.html;$('#res').innerHTML=c.html}else reveal(c.html)};
@@ -335,12 +583,13 @@ function practice(){
   app.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{const g=+b.dataset.g;s.seen=1;
    if(g===0){s.box=1;s.due=day()+1;P.hard++;if(!P.requeued)P.requeued={};if(!P.requeued[x.k]){P.requeued[x.k]=1;P.q.push(x)}}
    else{s.box=Math.min(5,s.box+(g===2?2:1));s.due=day()+IV[s.box];P.good++}
+   if(x.lid){const b=LS().bank;if(g===0)b[x.k]=0;else if(b[x.k]!=null){b[x.k]++;if(b[x.k]>=3)delete b[x.k]}}
    save();P.n++;P.shown=false;P.hint=false;P.usedShow=false;P.res='';render()});
   const mic=$('#mic');if(mic)mic.onclick=()=>listen(mic,got);
  }
  $('#home').onclick=()=>go(backTo(P));
- const pl=$('#play');if(pl)pl.onclick=()=>speak(x.en);
- const sl=$('#slow');if(sl)sl.onclick=()=>speak(x.en,true);
+ const pl=$('#play');if(pl)pl.onclick=()=>sayX(x);
+ const sl=$('#slow');if(sl)sl.onclick=()=>sayX(x,true);
 }
 function done(){const P=V;
  app.innerHTML=`<div class="top"><div class="wrap"><h1>Круг пройден.</h1><p>${P.mode==='listen'?`Ты проговорил ${P.total} фраз. Теперь попробуй сказать их с русского.`:`Нормально или легко: ${P.good}. Трудных: ${P.hard} — они вернутся завтра.`}</p>
@@ -381,8 +630,11 @@ function claude(){const b=B[V.bi];
  $('#home').onclick=()=>go({v:'block',bi:V.bi});
  $('#cp').onclick=()=>{const ta=$('#ta');try{navigator.clipboard.writeText(txt).then(()=>toast('Скопировано'),()=>{ta.select();toast('Выдели и скопируй вручную')})}catch(e){ta.select();toast('Выдели и скопируй вручную')}};
 }
-function render(){({home,block,practice,words,simple,claude,story,retell})[V.v]();const h=$('#hm');if(h){if(V.v==='block'||V.v==='simple')h.style.display='none';else h.onclick=()=>go({v:'home'})}}
-function parentOf(v){switch(v.v){case 'home':return null;case 'block':case 'simple':return {v:'home'};
+function render(){clearTimeout(exT);({home,block,practice,words,simple,claude,story,retell,ladder,lesson,lstep,drill,marathon})[V.v]();const h=$('#hm');if(h){if(V.v==='block'||V.v==='simple'||V.v==='ladder')h.style.display='none';else h.onclick=()=>go({v:'home'})}}
+function parentOf(v){switch(v.v){case 'home':return null;case 'block':case 'simple':case 'ladder':return {v:'home'};
+ case 'lesson':case 'marathon':return {v:'ladder'};
+ case 'lstep':return {v:'lesson',id:v.id};
+ case 'drill':return v.from==='lesson'?{v:'lesson',id:v.lid}:{v:'ladder'};
  case 'practice':return v.from!=null?{v:'block',bi:v.from}:{v:'home'};
  case 'story':case 'retell':case 'words':case 'claude':return {v:'block',bi:v.bi};default:return {v:'home'}}}
 let exitArmed=0;
@@ -390,9 +642,10 @@ window.addEventListener('popstate',()=>{const p=parentOf(V);
  if(p){go(p);try{history.pushState({gp:1},'')}catch(e){}}
  else if(Date.now()-exitArmed>2500){exitArmed=Date.now();toast('Нажми «назад» ещё раз, чтобы выйти');try{history.pushState({gp:1},'')}catch(e){}}
  else{try{history.back()}catch(e){}}});
-window.GP={ST,wordHit,toksOf};
+window.GP={ST,wordHit,toksOf,checkL,get S(){return S},get LD(){return LD}};
 try{history.pushState({gp:1},'')}catch(e){}
 render();
+loadLD().then(j=>{if(j&&V.v==='home')render()});loadLM();
 if('serviceWorker' in navigator&&!inFrame&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
 }
 </script>

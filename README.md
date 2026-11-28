@@ -6,6 +6,7 @@
 
 ## Что внутри
 
+- **Лестница**: курс живого повседневного американского английского. Один урок — одна разговорная конструкция (I'm…, I need…, Can I…?), 12 слов и 10 фраз. Шаги урока: слова → формула → фразы → говорение → тест. Следующий урок открывается при 85% в тесте, после каждых 5 уроков идёт марафон на 50 фраз. Есть банк ошибок и резервная копия прогресса в файл.
 - **500 полезных слов** в 20 блоках по 25 по 10 темам: разговорные слова, чувства, люди и характер, описание вещей, общение, действия, работа и деньги, время и привычки, быт и магазин, дорога и здоровье.
 - Каждое слово дано в **короткой простой фразе** (до 8 слов) с переводом.
 - **Слушай и повторяй**: озвучка обычная и медленная.
@@ -31,4 +32,4 @@
 
 ---
 
-**English:** A free browser app (PWA) for Russian speakers to practise short, simple spoken English: 500 useful words in short sentences, listen & repeat, speak-from-Russian drills with speech recognition, spaced repetition. No ads, no accounts. Progress stays in your browser. Provided "as is", without warranty — see [privacy.html](privacy.html) and LICENSE.
+**English:** A free browser app (PWA) for Russian speakers to practise short, simple spoken English: a ladder course of live everyday American phrases (one construction per lesson, test to unlock the next), 500 useful words in short sentences, listen & repeat, speak-from-Russian drills with speech recognition, spaced repetition. No ads, no accounts. Progress stays in your browser. Provided "as is", without warranty — see [privacy.html](privacy.html) and LICENSE.
