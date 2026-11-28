@@ -60,8 +60,10 @@ button,input{font:inherit;color:inherit}
 .inp{display:flex;gap:8px;margin-top:12px}.inp input{flex:1;min-height:46px;border:2px solid var(--line);border-radius:14px;padding:8px 12px;background:var(--card);font-size:17px}
 .rate{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
 .rate .btn{padding:8px 4px;font-size:15px}
-.mic.on{background:var(--bad);border-color:var(--bad);color:#fff;animation:pulse 1s infinite}
-@keyframes pulse{50%{opacity:.6}}@media(prefers-reduced-motion:reduce){.mic.on{animation:none}}
+.btn.mic{background:#ffd400;border-color:#b38f00;color:#14202b;min-width:150px;font-size:18px}
+.btn.mic.on{background:var(--bad);border-color:var(--bad);color:#fff;animation:pulse 1s infinite}
+#next{margin-top:14px}
+@keyframes pulse{50%{opacity:.6}}@media(prefers-reduced-motion:reduce){.btn.mic.on{animation:none}}
 .list{list-style:none;padding:0;margin:0}.list li{border-bottom:1px solid var(--line);padding:12px 0;cursor:pointer}
 .list b{font-size:19px}.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;max-width:90vw;display:none;z-index:9}
 textarea{width:100%;min-height:160px;border-radius:12px;border:2px solid var(--line);padding:10px;background:var(--card);font:14px/1.4 ui-monospace,monospace}
